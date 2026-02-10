@@ -1,0 +1,40 @@
+<h1>CareBridge Dashboard</h1>
+
+@if (patientService.loading()) {
+  <p>Loading clinical records from API...</p>
+} @else if (patientService.error()) {
+  <p style="color: red">
+    ⚠️ Error: {{ patientService.error() }}. Please verify system connectivity.
+  </p>
+} @else {
+  <p>
+    Patients Overdue: <span style="color: #e11d48">{{ patientService.overdueCount() }}</span>
+  </p>
+  @if (patientService.overdueCount() > 1) {
+    <div style="margin: 1rem 0">
+      <input
+        type="text"
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)"
+        placeholder="Filter patients..."
+      />
+    </div>
+  }
+
+  <ul>
+    @for (p of filteredPatients(); track p.id) {
+      <li style="display: flex; justify-content: space-between; align-items: center">
+        <span>{{ p.familyName }}, {{ p.givenName }}</span>
+        <button (click)="patientService.markResolved(p.id)">Resolve</button>
+      </li>
+    } @empty {
+      <li>No overdue patients found.</li>
+    }
+  </ul>
+
+  <div style="margin-top: 20px">
+    <button (click)="addNewPatient()" style="cursor: pointer; padding: 8px 16px">
+      + Add Test Patient
+    </button>
+  </div>
+}

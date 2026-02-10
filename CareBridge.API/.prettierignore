@@ -1,0 +1,43 @@
+# --- Artifacts & Build Outputs ---
+dist/
+bin/
+obj/
+out/
+.artifacts/
+publish/
+
+# --- Dependencies ---
+node_modules/
+.angular/
+vendor/
+
+# --- .NET / C# Specific ---
+# Prettier doesn't format C# files by default, 
+# but we ignore these to prevent accidental processing.
+*.csproj
+*.sln
+*.user
+*.suo
+*.db
+*.sqlite
+
+# --- IDE & System Files ---
+.vs/
+.vscode/
+.idea/
+.DS_Store
+*.swp
+Thumbs.db
+
+# --- Angular / Frontend Specific ---
+# Ignore generated code or coverage reports
+coverage/
+src/assets/
+*.min.js
+*.min.css
+
+# --- Secrets & Configs ---
+.env
+.env.*
+appsettings.json
+appsettings.*.json
