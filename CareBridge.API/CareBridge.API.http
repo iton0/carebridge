@@ -1,0 +1,11 @@
+@CareBridge.API_HostAddress = http://localhost:5138
+
+### Get All Patients
+GET {{CareBridge.API_HostAddress}}/api/patient
+Accept: application/json
+
+### Get Overdue Patients
+GET {{CareBridge.API_HostAddress}}/api/patient/overdue
+Accept: application/json
+
+###
