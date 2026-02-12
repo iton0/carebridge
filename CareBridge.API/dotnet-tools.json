@@ -4,9 +4,7 @@
   "tools": {
     "csharp-ls": {
       "version": "0.22.0",
-      "commands": [
-        "csharp-ls"
-      ],
+      "commands": ["csharp-ls"],
       "rollForward": false
     }
   }

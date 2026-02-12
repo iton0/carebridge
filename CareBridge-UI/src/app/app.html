@@ -1,12 +1,21 @@
 <h1>CareBridge Dashboard</h1>
 
-@if (patients$ | async; as patients) {
-<p>Patients Overdue: <span style="color: #e11d48;">{{ patients.length }}</span></p>
+@if (patientsResource.isLoading()) {
+  <p>Loading clinical records from API...</p>
+} @else if (patientsResource.error()) {
+  <p style="color: red">
+    ⚠️ Error: Could not retrieve clinical records. Please verify system connectivity.
+  </p>
+} @else if (patientsResource.value(); as patients) {
+  <p>
+    Patients Overdue: <span style="color: #e11d48">{{ patients.length }}</span>
+  </p>
+
   <ul>
     @for (p of patients; track p.id) {
       <li>{{ p.familyName }}, {{ p.givenName }}</li>
+    } @empty {
+      <li>No overdue patients found.</li>
     }
   </ul>
-} @else {
-  <p>Loading clinical records from API...</p>
 }

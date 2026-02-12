@@ -1,6 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, inject, resource, ResourceRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Observable } from 'rxjs';
 import { PatientService } from './services/patient';
 import { Patient } from './models/patient';
 
@@ -11,12 +10,10 @@ import { Patient } from './models/patient';
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class AppRoot implements OnInit {
-  private patientService: PatientService = inject(PatientService);
+export class AppRoot {
+  private readonly patientService = inject(PatientService);
 
-  patients$: Observable<Patient[]> | undefined;
-
-  ngOnInit() {
-    this.patients$ = this.patientService.getOverduePatients();
-  }
+  patientsResource: ResourceRef<Patient[] | undefined> = resource({
+    loader: () => this.patientService.getOverduePatients(),
+  });
 }

@@ -26,8 +26,6 @@ run-api:
 	cd $(API_DIR) && dotnet run
 
 # 4. Run both simultaneously
-# The '&' runs them in the background, and 'wait' ensures 
-# Ctrl+C kills the make process and its children.
 start: clean
 	@echo "Launching CareBridge Ecosystem..."
-	$(MAKE) -j 2 run-api run-ui
+	$(MAKE) -j 2 run-ui run-api
