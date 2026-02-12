@@ -1,0 +1,63 @@
+/* --- SIMPLE DASHBOARD THEME --- */
+:host {
+  display: block;
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: sans-serif;
+  line-height: 1.6;
+
+  /* Variables for easy switching */
+  --bg: #ffffff;
+  --text: #333333;
+  --primary: #007bff; /* Professional Blue */
+  --border: #dddddd;
+  --card-bg: #f9f9f9;
+}
+
+/* Dark Mode Logic */
+@media (prefers-color-scheme: dark) {
+  :host {
+    --bg: #1a1a1a;
+    --text: #eeeeee;
+    --primary: #3793ff;
+    --border: #444444;
+    --card-bg: #2d2d2d;
+  }
+}
+
+/* Apply variables to elements */
+h1 {
+  color: var(--primary);
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 10px;
+}
+
+ul {
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background-color: var(--card-bg);
+}
+
+li {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+li:last-child {
+  border-bottom: none;
+}
+
+p {
+  color: var(--text);
+  font-weight: bold;
+}
+
+/* Simple Hover effect to show it's interactive */
+li:hover {
+  background-color: var(--border);
+  cursor: default;
+}
