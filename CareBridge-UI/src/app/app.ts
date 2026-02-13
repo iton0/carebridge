@@ -1,4 +1,4 @@
-import { Component, inject, resource, ResourceRef } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PatientService } from './services/patient';
 import { Patient } from './models/patient';
@@ -8,12 +8,19 @@ import { Patient } from './models/patient';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './app.html',
-  styleUrl: './app.css',
+  styleUrls: ['./app.css'],
 })
 export class AppRoot {
-  private readonly patientService = inject(PatientService);
+  public readonly patientService = inject(PatientService);
 
-  patientsResource: ResourceRef<Patient[] | undefined> = resource({
-    loader: () => this.patientService.getOverduePatients(),
-  });
+  addNewPatient() {
+    const newPatient: Patient = {
+      id: Math.floor(Math.random() * 10000),
+      familyName: 'Old-Record',
+      givenName: 'Test',
+      lastScreeningDate: new Date('2021-01-01'),
+      gender: 'other',
+    };
+    this.patientService.addPatient(newPatient);
+  }
 }

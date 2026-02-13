@@ -1,21 +1,35 @@
 <h1>CareBridge Dashboard</h1>
 
-@if (patientsResource.isLoading()) {
+@if (patientService.loading()) {
   <p>Loading clinical records from API...</p>
-} @else if (patientsResource.error()) {
+} @else if (patientService.error()) {
   <p style="color: red">
-    ⚠️ Error: Could not retrieve clinical records. Please verify system connectivity.
+    ⚠️ Error: {{ patientService.error() }}. Please verify system connectivity.
   </p>
-} @else if (patientsResource.value(); as patients) {
+} @else {
   <p>
-    Patients Overdue: <span style="color: #e11d48">{{ patients.length }}</span>
+    Patients Overdue: <span style="color: #e11d48">{{ patientService.overdueCount() }}</span>
   </p>
 
   <ul>
-    @for (p of patients; track p.id) {
-      <li>{{ p.familyName }}, {{ p.givenName }}</li>
+    @for (p of patientService.overduePatients(); track p.id) {
+      <li style="display: flex; justify-content: space-between; align-items: center">
+        <span>{{ p.familyName }}, {{ p.givenName }}</span>
+        <button
+          (click)="patientService.markResolved(p.id)"
+          style="cursor: pointer; padding: 2px 8px"
+        >
+          Resolve
+        </button>
+      </li>
     } @empty {
       <li>No overdue patients found.</li>
     }
   </ul>
+
+  <div style="margin-top: 20px">
+    <button (click)="addNewPatient()" style="cursor: pointer; padding: 8px 16px">
+      + Add Test Patient
+    </button>
+  </div>
 }

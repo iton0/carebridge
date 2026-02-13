@@ -23,7 +23,7 @@ run-ui:
 # 3. Start .NET API
 run-api:
 	@echo "Starting .NET API..."
-	cd $(API_DIR) && dotnet run
+	cd $(API_DIR) && dotnet watch run
 
 # 4. Run both simultaneously
 start: clean

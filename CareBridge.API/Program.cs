@@ -1,49 +1,39 @@
 using CareBridge.Api.Logic;
+using CareBridge.Api.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. Configuration Constants ---
 const string AngularPolicy = "AllowAngularOrigin";
-var allowedOrigin = builder.Configuration["CorsSettings:AllowedOrigin"];
-if (string.IsNullOrEmpty(allowedOrigin))
-{
-    allowedOrigin = "http://localhost:4200"; // Default fallback
-}
 
-// --- 2. Service Registration (Dependency Injection) ---
+// 1. Register Services
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
-
-// Register Business Logic
 builder.Services.AddScoped<Engine>();
+builder.Services.AddSignalR();
 
-// Configure CORS
+// 2. Configure CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(AngularPolicy, policy =>
-        policy.WithOrigins(allowedOrigin)
+        policy.WithOrigins("http://localhost:4200")
               .AllowAnyMethod()
-              .AllowAnyHeader());
+              .AllowAnyHeader()
+              .AllowCredentials());
 });
 
 var app = builder.Build();
 
-// --- 3. Middleware Pipeline ---
-
-// Enable Documentation in Development
+// 3. Configure Middleware
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-else
-{
-    app.UseHttpsRedirection();
-}
 
 app.UseCors(AngularPolicy);
-
 app.UseAuthorization();
-
 app.MapControllers();
+
+// 4. Map the Real-time Hub
+app.MapHub<PatientHub>("/patientHub");
 
 app.Run();
