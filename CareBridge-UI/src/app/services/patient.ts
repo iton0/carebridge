@@ -6,8 +6,9 @@ import { Patient } from '../models/patient';
 
 @Injectable({ providedIn: 'root' })
 export class PatientService implements OnDestroy {
-  private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5138/api/patient';
+  private readonly _http = inject(HttpClient);
+  private readonly _apiUrl = 'http://localhost:5138/api/patient';
+  private readonly _signalRUrl = 'http://localhost:5138/patientHub';
 
   private readonly _overduePatients = signal<Patient[]>([]);
   readonly overduePatients = this._overduePatients.asReadonly();
@@ -15,28 +16,28 @@ export class PatientService implements OnDestroy {
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  private connection: signalR.HubConnection;
+  private _connection: signalR.HubConnection;
 
   constructor() {
-    this.connection = new signalR.HubConnectionBuilder()
-      .withUrl('http://localhost:5138/patientHub')
+    this._connection = new signalR.HubConnectionBuilder()
+      .withUrl(this._signalRUrl)
       .withAutomaticReconnect()
       .build();
 
     // Listen for the SignalR broadcast from the .NET Controller
-    this.connection.on('PatientUpdated', (updatedPatients: Patient[]) => {
+    this._connection.on('PatientUpdated', (updatedPatients: Patient[]) => {
       console.log('SignalR Broadcast Received!', updatedPatients);
       this._overduePatients.set(updatedPatients);
     });
 
-    this.connection.start().catch((err) => console.error('SignalR Error:', err));
+    this._connection.start().catch((err) => console.error('SignalR Error:', err));
     this.loadOverduePatients();
   }
 
   async loadOverduePatients() {
     this.loading.set(true);
     try {
-      const data = await firstValueFrom(this.http.get<Patient[]>(`${this.apiUrl}/overdue`));
+      const data = await firstValueFrom(this._http.get<Patient[]>(`${this._apiUrl}/overdue`));
       this._overduePatients.set(data ?? []);
     } catch {
       this.error.set('Could not retrieve records.');
@@ -51,7 +52,7 @@ export class PatientService implements OnDestroy {
       this._overduePatients.update((prev) => [...prev, newPatient]);
 
       // 2. Send to API
-      await firstValueFrom(this.http.post<Patient>(this.apiUrl, newPatient));
+      await firstValueFrom(this._http.post<Patient>(this._apiUrl, newPatient));
 
       console.log('Patient added successfully to Server');
     } catch (err) {
@@ -68,6 +69,6 @@ export class PatientService implements OnDestroy {
   }
 
   ngOnDestroy() {
-    this.connection.stop();
+    this._connection.stop();
   }
 }
