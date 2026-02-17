@@ -15,23 +15,23 @@ export class AppRoot {
 
   searchQuery = linkedSignal<number, string>({
     source: () => this.patientService.overdueCount(),
-    computation: () => {
-      return '';
-    },
+    computation: () => '',
   });
 
   filteredPatients = computed(() => {
-    const query = this.searchQuery().toLowerCase();
+    const query = this.searchQuery().toLowerCase().trim();
     const patients = this.patientService.overduePatients();
 
     if (!query) return patients;
 
-    return patients.filter(
-      (p) =>
-        p.familyName.toLowerCase().includes(query) || p.givenName.toLowerCase().includes(query),
-    );
+    return patients.filter((p) => {
+      const first = p.givenName?.toLowerCase() ?? '';
+      const last = p.familyName?.toLowerCase() ?? '';
+      return first.includes(query) || last.includes(query);
+    });
   });
 
+  // 4. Actions
   addNewPatient() {
     const newPatient: Patient = {
       id: Math.floor(Math.random() * 10000),
@@ -40,6 +40,12 @@ export class AppRoot {
       lastScreeningDate: new Date('2021-01-01'),
       gender: 'other',
     };
+
     this.patientService.addPatient(newPatient);
+  }
+
+  updateSearch(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.searchQuery.set(input.value);
   }
 }
