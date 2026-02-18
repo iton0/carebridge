@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using CareBridge.Api.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Net.Mime;
 
 namespace CareBridge.Api.Controllers
 {
@@ -24,6 +25,8 @@ namespace CareBridge.Api.Controllers
         }
 
         [HttpGet("overdue")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<Patient>>> GetOverduePatients()
         {
             var allPatients = await _dbContext.Patients.ToListAsync();
@@ -32,6 +35,9 @@ namespace CareBridge.Api.Controllers
         }
 
         [HttpPost]
+        [Consumes(MediaTypeNames.Application.Json)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<Patient>> AddPatient([FromBody] Patient newPatient)
         {
             _dbContext.Patients.Add(newPatient);
