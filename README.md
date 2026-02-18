@@ -5,16 +5,16 @@ A clinical decision support (CDS) mini-service that identifies patients overdue 
 > [!CAUTION]
 > **Active Development:** This project is evolving rapidly. Expect breaking changes and frequent updates.
 
-### **Demo**
+### Demo
 
 https://github.com/user-attachments/assets/016184d2-8dc9-491e-9aa9-aae580680d3e
 
-### **Tech Stack**
+### Tech Stack
 
 - **Backend:** ASP.NET Core 10 Web API (RESTful).
 - **Frontend:** Angular 21.
 
-### **Dependencies**
+### Dependencies
 
 - dotnet v10 (_required_)
 - node v25 (_required_)
@@ -26,7 +26,7 @@ https://github.com/user-attachments/assets/016184d2-8dc9-491e-9aa9-aae580680d3e
 > mise will handle the other required dependencies (excluding make) if
 > installed. Simply run `mise install` in the root of the local clone.
 
-### **Quickstart**
+### Quickstart
 
 - Clone repository.
 - Start the backend and the frontend either by:
