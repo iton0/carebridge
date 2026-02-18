@@ -31,7 +31,6 @@ export class AppRoot {
     });
   });
 
-  // 4. Actions
   addNewPatient() {
     const newPatient: Patient = {
       id: Math.floor(Math.random() * 10000),
