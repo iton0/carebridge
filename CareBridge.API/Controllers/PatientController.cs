@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using CareBridge.Api.Data;
 using Microsoft.EntityFrameworkCore;
-using System.Net.Mime;
 
 namespace CareBridge.Api.Controllers
 {
@@ -25,28 +24,33 @@ namespace CareBridge.Api.Controllers
         }
 
         [HttpGet("overdue")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<Patient>>> GetOverduePatients()
         {
-            var allPatients = await _dbContext.Patients.ToListAsync();
-            var overdue = await _engine.ScreenAsync(allPatients);
+            var patientQuery = _dbContext.Patients.AsNoTracking().AsQueryable();
+
+            var filteredQuery = _engine.ApplyScreeningFilter(patientQuery);
+
+            var overdue = await filteredQuery.ToListAsync();
+
+            if (!overdue.Any()) return NotFound();
+
             return Ok(overdue);
         }
 
         [HttpPost]
-        [Consumes(MediaTypeNames.Application.Json)]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<Patient>> AddPatient([FromBody] Patient newPatient)
         {
             _dbContext.Patients.Add(newPatient);
             await _dbContext.SaveChangesAsync();
 
-            var allPatients = await _dbContext.Patients.ToListAsync();
-            var updatedOverdue = await _engine.ScreenAsync(allPatients);
+            var singlePatientQuery = new[] { newPatient }.AsQueryable();
 
-            await _hubContext.Clients.All.SendAsync("PatientUpdated", updatedOverdue);
+            var isOverdue = _engine.ApplyScreeningFilter(singlePatientQuery).Any();
+
+            if (isOverdue)
+            {
+                await _hubContext.Clients.All.SendAsync("PatientOverdueAlert", newPatient);
+            }
 
             return CreatedAtAction(nameof(GetOverduePatients), new { id = newPatient.Id }, newPatient);
         }

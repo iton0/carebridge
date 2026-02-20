@@ -4,11 +4,19 @@ namespace CareBridge.Api.Logic;
 
 public class Engine
 {
-    public async Task<List<Patient>> ScreenAsync(List<Patient> patients)
     // TODO: make logic more robust
+    public IQueryable<Patient> ApplyScreeningFilter(IQueryable<Patient> query)
     {
-        return await Task.Run(() =>
-            patients.Where(p => (DateTime.Today - p.LastScreeningDate).TotalDays > 365).ToList()
-        );
+        var cutoffDate = DateTime.Today.AddYears(-1);
+
+        return query
+            .Where(p => p.LastScreeningDate == null || p.LastScreeningDate < cutoffDate)
+            .Select(p => new Patient
+            {
+                Id = p.Id,
+                FamilyName = p.FamilyName,
+                GivenName = p.GivenName,
+                LastScreeningDate = p.LastScreeningDate
+            });
     }
 }
