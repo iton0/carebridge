@@ -24,13 +24,13 @@ namespace CareBridge.Api.Controllers
         }
 
         [HttpGet("overdue")]
-        public async Task<ActionResult<IEnumerable<Patient>>> GetOverduePatients()
+        public async Task<ActionResult<IEnumerable<Patient>>> GetOverduePatients(CancellationToken ct)
         {
             var patientQuery = _dbContext.Patients.AsNoTracking().AsQueryable();
 
             var filteredQuery = _engine.ApplyScreeningFilter(patientQuery);
 
-            var overdue = await filteredQuery.ToListAsync();
+            var overdue = await filteredQuery.ToListAsync(ct);
 
             if (!overdue.Any()) return NotFound();
 
@@ -38,7 +38,7 @@ namespace CareBridge.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Patient>> AddPatient([FromBody] Patient newPatient)
+        public async Task<ActionResult<Patient>> AddPatient([FromBody] Patient newPatient, CancellationToken ct)
         {
             _dbContext.Patients.Add(newPatient);
             await _dbContext.SaveChangesAsync();
@@ -49,7 +49,7 @@ namespace CareBridge.Api.Controllers
 
             if (isOverdue)
             {
-                await _hubContext.Clients.All.SendAsync("PatientOverdueAlert", newPatient);
+                await _hubContext.Clients.All.SendAsync("PatientOverdueAlert", newPatient, ct);
             }
 
             return CreatedAtAction(nameof(GetOverduePatients), new { id = newPatient.Id }, newPatient);

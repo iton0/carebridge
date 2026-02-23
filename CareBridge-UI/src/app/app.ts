@@ -1,4 +1,4 @@
-import { Component, computed, inject, linkedSignal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PatientService } from './services/patient';
 import { Patient } from './models/patient';
@@ -31,10 +31,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 export class AppRoot {
   public readonly patientService = inject(PatientService);
 
-  searchQuery = linkedSignal<number, string>({
-    source: () => this.patientService.overdueCount(),
-    computation: () => '',
-  });
+  searchQuery = signal('');
 
   filteredPatients = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();

@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Subject, switchMap, tap, catchError, of, startWith } from 'rxjs';
 import { Patient } from '../models/patient';
 import { SignalRService } from './signalr';
 
@@ -8,54 +9,91 @@ import { SignalRService } from './signalr';
 export class PatientService {
   private readonly _http = inject(HttpClient);
   private readonly _signalR = inject(SignalRService);
-
   private readonly _apiUrl = 'http://localhost:5138/api/patient';
 
-  private readonly _overduePatients = signal<Patient[]>([]);
-  readonly overduePatients = this._overduePatients.asReadonly();
-  readonly overdueCount = computed(() => this.overduePatients().length);
-
+  // --- State Signals ---
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
 
-  constructor() {
-    // Listen for SignalR updates
-    this._signalR.onPatientUpdate((updatedPatients) => {
-      this._overduePatients.set(updatedPatients);
-    });
+  private readonly _resolvedIds = signal<Set<number>>(new Set());
 
-    this.loadOverduePatients();
+  private readonly _localOverdueUpdates = signal<Patient[]>([]);
+
+  private readonly _loadTrigger = new Subject<void>();
+
+  private readonly _remoteOverduePatients = toSignal(
+    this._loadTrigger.pipe(
+      startWith(void 0),
+      tap(() => this.loading.set(true)),
+      switchMap(() =>
+        this._http.get<Patient[]>(`${this._apiUrl}/overdue`).pipe(
+          tap(() => {
+            this._localOverdueUpdates.set([]); // Clear local on fresh sync
+            this.error.set(null);
+          }),
+          catchError(() => {
+            this.error.set('Could not retrieve records.');
+            return of([]);
+          }),
+          tap(() => this.loading.set(false)),
+        ),
+      ),
+    ),
+    { initialValue: [] as Patient[] },
+  );
+
+  readonly overduePatients = computed(() => {
+    const remote = this._remoteOverduePatients();
+    const local = this._localOverdueUpdates();
+    const resolved = this._resolvedIds();
+
+    const combined = [...remote, ...local];
+
+    // Filter out duplicates AND anything the user marked as resolved
+    const uniqueMap = new Map<number, Patient>();
+    for (const p of combined) {
+      if (!resolved.has(p.id)) {
+        uniqueMap.set(p.id, p);
+      }
+    }
+
+    return Array.from(uniqueMap.values());
+  });
+
+  readonly overdueCount = computed(() => this.overduePatients().length);
+
+  constructor() {
+    this._signalR.onPatientUpdate((updatedPatients) => {
+      this._localOverdueUpdates.set(updatedPatients);
+    });
   }
 
-  async loadOverduePatients() {
-    this.loading.set(true);
-    try {
-      const overdueUrl = `${this._apiUrl}/overdue`;
-      const data = await firstValueFrom(this._http.get<Patient[]>(overdueUrl));
-      this._overduePatients.set(data ?? []);
-    } catch {
-      this.error.set('Could not retrieve records.');
-    } finally {
-      this.loading.set(false);
-    }
+  loadOverduePatients() {
+    this._loadTrigger.next();
   }
 
   async addPatient(newPatient: Patient) {
-    try {
-      // Update UI before server responds
-      this._overduePatients.update((prev) => [...prev, newPatient]);
+    this._localOverdueUpdates.update((prev) => [...prev, newPatient]);
 
-      await firstValueFrom(this._http.post<Patient>(this._apiUrl, newPatient));
-      console.log('Patient added successfully to Server');
+    try {
+      await fetch(this._apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPatient),
+      });
     } catch (err) {
-      console.error('Failed to add patient to the API', err);
       // Rollback on failure
-      this.loadOverduePatients();
+      this._localOverdueUpdates.update((prev) => prev.filter((p) => p !== newPatient));
       this.error.set('Server rejected the new patient.');
+      console.error(err);
     }
   }
 
   markResolved(id: number) {
-    this._overduePatients.update((list) => list.filter((p) => p.id !== id));
+    this._resolvedIds.update((set) => {
+      const newSet = new Set(set);
+      newSet.add(id);
+      return newSet;
+    });
   }
 }
