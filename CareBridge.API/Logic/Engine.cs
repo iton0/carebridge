@@ -3,7 +3,7 @@ using CareBridge.Api.Settings;
 
 namespace CareBridge.Api.Logic;
 
-public class Engine : IEngine
+internal sealed class Engine : IEngine
 {
     private readonly DateTime _cutoff;
 
