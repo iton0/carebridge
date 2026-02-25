@@ -1,22 +1,26 @@
 using CareBridge.Api.Models;
+using CareBridge.Api.Settings;
 
 namespace CareBridge.Api.Logic;
 
-public class Engine
+public class Engine : IEngine
 {
+    private readonly DateTime _cutoff;
+
+    public Engine(ScreeningSettings settings)
+    {
+        _cutoff = settings.CutoffDate;
+    }
+
     // TODO: make logic more robust
     public IQueryable<Patient> ApplyScreeningFilter(IQueryable<Patient> query)
     {
-        var cutoffDate = DateTime.Today.AddYears(-1);
+        // pre-calculate to ensure sql compatibility
+        var thresholdDate = _cutoff.AddYears(-1);
 
-        return query
-            .Where(p => p.LastScreeningDate == null || p.LastScreeningDate < cutoffDate)
-            .Select(p => new Patient
-            {
-                Id = p.Id,
-                FamilyName = p.FamilyName,
-                GivenName = p.GivenName,
-                LastScreeningDate = p.LastScreeningDate
-            });
+        return query.Where(p =>
+            p.LastScreeningDate == null ||
+            p.LastScreeningDate < thresholdDate
+        );
     }
 }

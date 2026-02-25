@@ -1,9 +1,19 @@
 using CareBridge.Api.Data;
 using CareBridge.Api.Logic;
+using CareBridge.Api.Settings;
 using CareBridge.Api.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var screeningSettings = builder.Configuration
+    .GetSection("ScreeningSettings")
+    .Get<ScreeningSettings>();
+
+if (screeningSettings == null)
+{
+    throw new Exception("Critical Error: 'ScreeningSettings' section is missing from appsettings.json!");
+}
 
 const string AngularPolicy = "AllowAngularOrigin";
 const string AngularUrl = "http://localhost:4200";
@@ -12,7 +22,8 @@ const string DbName = "carebridge.db";
 // 1. Register Services
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
-builder.Services.AddScoped<Engine>();
+builder.Services.AddSingleton(screeningSettings);
+builder.Services.AddScoped<IEngine, Engine>();
 builder.Services.AddSignalR();
 builder.Services.AddDbContext<CareBridgeDbContext>(options =>
     options.UseSqlite($"Data Source={DbName}"));

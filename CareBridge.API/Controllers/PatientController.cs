@@ -12,11 +12,11 @@ namespace CareBridge.Api.Controllers
     [Route("api/[controller]")]
     public class PatientController : ControllerBase
     {
-        private readonly Engine _engine;
+        private readonly IEngine _engine;
         private readonly IHubContext<PatientHub> _hubContext;
         private readonly CareBridgeDbContext _dbContext;
 
-        public PatientController(Engine engine, IHubContext<PatientHub> hubContext, CareBridgeDbContext dbContext)
+        public PatientController(IEngine engine, IHubContext<PatientHub> hubContext, CareBridgeDbContext dbContext)
         {
             _engine = engine;
             _hubContext = hubContext;
