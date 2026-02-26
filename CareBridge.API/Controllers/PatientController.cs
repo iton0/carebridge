@@ -21,28 +21,34 @@ public class PatientController(
     private readonly ScreeningSettings _settings = settings;
 
     [HttpGet("overdue")]
-    public async Task<ActionResult<IEnumerable<Patient>>> GetOverduePatients(CancellationToken ct)
+    public async Task<List<Patient>> GetOverduePatients(CancellationToken ct)
     {
-        var query = _dbContext.Patients.AsNoTracking();
+        var threshold = ScreeningLogic.GetScreeningThreshold(_settings.CutoffDate);
 
-        var filtered = ScreeningLogic.ApplyFilter(query, _settings.CutoffDate);
-
-        var overdue = await filtered.ToListAsync(ct);
-
-        return overdue.Count != 0 ? Ok(overdue) : NotFound();
+        return await _dbContext.Patients
+            .AsNoTracking()
+            .Where(p => p.LastScreeningDate < threshold)
+            .ToListAsync(ct);
     }
 
     [HttpPost]
-    public async Task<ActionResult<Patient>> AddPatient([FromBody] Patient newPatient, CancellationToken ct)
+    public async Task<IResult> AddPatient(Patient patient, CancellationToken ct)
     {
-        _dbContext.Patients.Add(newPatient);
+        _dbContext.Patients.Add(patient);
         await _dbContext.SaveChangesAsync(ct);
 
-        if (ScreeningLogic.IsOverdue(newPatient, _settings.CutoffDate))
+        var threshold = ScreeningLogic.GetScreeningThreshold(_settings.CutoffDate);
+
+        if (ScreeningLogic.IsOverdue(patient.LastScreeningDate, threshold))
         {
-            await _hubContext.Clients.All.SendAsync("PatientOverdueAlert", newPatient, ct);
+            await _hubContext.Clients.All.SendAsync("PatientOverdueAlert", new
+            {
+                patient.Id,
+                FullName = $"{patient.FamilyName}, {patient.GivenName}",
+                LastDate = patient.LastScreeningDate
+            }, ct);
         }
 
-        return CreatedAtAction(nameof(GetOverduePatients), new { id = newPatient.Id }, newPatient);
+        return Results.Created($"/api/patient/{patient.Id}", patient);
     }
 }
