@@ -4,7 +4,7 @@ namespace CareBridge.Api.Logic;
 
 public static class ScreeningLogic
 {
-    private static readonly DateTime DateFloor = new DateTime(1700, 1, 1);
+    private static readonly DateTime DateFloor = new(1700, 1, 1);
 
     public static IQueryable<Patient> ApplyFilter(IQueryable<Patient> query, DateTime cutoffDate)
     {

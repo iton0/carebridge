@@ -6,27 +6,19 @@ using CareBridge.Api.SignalR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace CareBridge.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class PatientController : ControllerBase
+public class PatientController(
+        IHubContext<PatientHub> hubContext,
+        CareBridgeDbContext dbContext,
+        ScreeningSettings settings) : ControllerBase
 {
-    private readonly IHubContext<PatientHub> _hubContext;
-    private readonly CareBridgeDbContext _dbContext;
-    private readonly ScreeningSettings _settings;
-
-    public PatientController(
-            IHubContext<PatientHub> hubContext,
-            CareBridgeDbContext dbContext,
-            ScreeningSettings settings)
-    {
-        _hubContext = hubContext;
-        _dbContext = dbContext;
-        _settings = settings;
-    }
+    private readonly IHubContext<PatientHub> _hubContext = hubContext;
+    private readonly CareBridgeDbContext _dbContext = dbContext;
+    private readonly ScreeningSettings _settings = settings;
 
     [HttpGet("overdue")]
     public async Task<ActionResult<IEnumerable<Patient>>> GetOverduePatients(CancellationToken ct)
@@ -37,7 +29,7 @@ public class PatientController : ControllerBase
 
         var overdue = await filtered.ToListAsync(ct);
 
-        return overdue.Any() ? Ok(overdue) : NotFound();
+        return overdue.Count != 0 ? Ok(overdue) : NotFound();
     }
 
     [HttpPost]

@@ -9,12 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Get data from the environment/platform.
 var screeningSettings = builder.Configuration
     .GetSection("ScreeningSettings")
-    .Get<ScreeningSettings>();
-
-if (screeningSettings == null)
-{
-    throw new Exception("Critical Error: 'ScreeningSettings' section is missing!");
-}
+    .Get<ScreeningSettings>() ?? throw new Exception("Critical Error: 'ScreeningSettings' section is missing!");
 
 const string AngularPolicy = "AllowAngularOrigin";
 const string AngularUrl = "http://localhost:4200";
