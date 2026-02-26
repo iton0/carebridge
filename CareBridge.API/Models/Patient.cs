@@ -1,23 +1,10 @@
-// Model in MVC
 namespace CareBridge.Api.Models;
 
-// TODO: HL7 FHIR Compliance (https://www.hl7.org/fhir/patient.html)
-public record Patient
+public class Patient
 {
-    public int Id { get; init; }
-    public string FamilyName { get; init; } = string.Empty;
-    public string GivenName { get; init; } = string.Empty;
-    public DateTime? LastScreeningDate { get; init; }
-    public string Gender { get; init; } = string.Empty;
-
-    public Patient() { }
-
-    public Patient(int id, string family, string given, DateTime last, string gender)
-    {
-        Id = id;
-        FamilyName = family;
-        GivenName = given;
-        LastScreeningDate = last;
-        Gender = gender;
-    }
+    public int Id { get; set; }
+    public string FamilyName { get; set; } = string.Empty;
+    public string GivenName { get; set; } = string.Empty;
+    public DateTime? LastScreeningDate { get; set; }
+    public string Gender { get; set; } = string.Empty;
 }

@@ -1,34 +1,38 @@
 using CareBridge.Api.Data;
-using CareBridge.Api.Logic;
 using CareBridge.Api.Settings;
 using CareBridge.Api.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// --- 1. CONFIGURATION ---
+// Get data from the environment/platform.
 var screeningSettings = builder.Configuration
     .GetSection("ScreeningSettings")
     .Get<ScreeningSettings>();
 
 if (screeningSettings == null)
 {
-    throw new Exception("Critical Error: 'ScreeningSettings' section is missing from appsettings.json!");
+    throw new Exception("Critical Error: 'ScreeningSettings' section is missing!");
 }
 
 const string AngularPolicy = "AllowAngularOrigin";
 const string AngularUrl = "http://localhost:4200";
 const string DbName = "carebridge.db";
 
-// 1. Register Services
+// --- 2. SERVICES ---
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
-builder.Services.AddSingleton(screeningSettings);
-builder.Services.AddScoped<IEngine, Engine>();
 builder.Services.AddSignalR();
+
+// Register the DATA so the Controller can pass it to our Static Logic.
+builder.Services.AddSingleton(screeningSettings);
+
+// Register the DATABASE.
 builder.Services.AddDbContext<CareBridgeDbContext>(options =>
     options.UseSqlite($"Data Source={DbName}"));
 
-// 2. Configure CORS
+// --- 3. CORS CONFIGURATION ---
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(AngularPolicy, policy =>
@@ -40,7 +44,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// 3. Configure Middleware
+// --- 4. MIDDLEWARE PIPELINE ---
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -50,20 +54,18 @@ app.UseCors(AngularPolicy);
 app.UseAuthorization();
 app.MapControllers();
 
-// 4. Map the Real-time Hub
 app.MapHub<PatientHub>("/patientHub");
 
+// --- 5. DATA INITIALIZATION ---
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<CareBridgeDbContext>();
 
-    // This deletes the DB and recreates it with ONLY seed data 
-    // every time the app starts.
+    // Wipe and recreate for a clean, predictable state every run.
     context.Database.EnsureDeleted();
     context.Database.EnsureCreated();
 
-    var count = context.Patients.Count();
-    Console.WriteLine($"---> Database check: {count} patients found in SQLite.");
+    Console.WriteLine($"---> Database Initialized: {context.Patients.Count()} patients loaded.");
 }
 
 app.Run();

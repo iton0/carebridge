@@ -1,58 +1,56 @@
-using CareBridge.Api.Models;
-using CareBridge.Api.SignalR;
+using CareBridge.Api.Data;
 using CareBridge.Api.Logic;
+using CareBridge.Api.Models;
+using CareBridge.Api.Settings;
+using CareBridge.Api.SignalR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using CareBridge.Api.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
-namespace CareBridge.Api.Controllers
+namespace CareBridge.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class PatientController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class PatientController : ControllerBase
+    private readonly IHubContext<PatientHub> _hubContext;
+    private readonly CareBridgeDbContext _dbContext;
+    private readonly ScreeningSettings _settings;
+
+    public PatientController(
+            IHubContext<PatientHub> hubContext,
+            CareBridgeDbContext dbContext,
+            ScreeningSettings settings)
     {
-        private readonly IEngine _engine;
-        private readonly IHubContext<PatientHub> _hubContext;
-        private readonly CareBridgeDbContext _dbContext;
+        _hubContext = hubContext;
+        _dbContext = dbContext;
+        _settings = settings;
+    }
 
-        public PatientController(IEngine engine, IHubContext<PatientHub> hubContext, CareBridgeDbContext dbContext)
+    [HttpGet("overdue")]
+    public async Task<ActionResult<IEnumerable<Patient>>> GetOverduePatients(CancellationToken ct)
+    {
+        var query = _dbContext.Patients.AsNoTracking();
+
+        var filtered = ScreeningLogic.ApplyFilter(query, _settings.CutoffDate);
+
+        var overdue = await filtered.ToListAsync(ct);
+
+        return overdue.Any() ? Ok(overdue) : NotFound();
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<Patient>> AddPatient([FromBody] Patient newPatient, CancellationToken ct)
+    {
+        _dbContext.Patients.Add(newPatient);
+        await _dbContext.SaveChangesAsync(ct);
+
+        if (ScreeningLogic.IsOverdue(newPatient, _settings.CutoffDate))
         {
-            _engine = engine;
-            _hubContext = hubContext;
-            _dbContext = dbContext;
+            await _hubContext.Clients.All.SendAsync("PatientOverdueAlert", newPatient, ct);
         }
 
-        [HttpGet("overdue")]
-        public async Task<ActionResult<IEnumerable<Patient>>> GetOverduePatients(CancellationToken ct)
-        {
-            var patientQuery = _dbContext.Patients.AsNoTracking().AsQueryable();
-
-            var filteredQuery = _engine.ApplyScreeningFilter(patientQuery);
-
-            var overdue = await filteredQuery.ToListAsync(ct);
-
-            if (!overdue.Any()) return NotFound();
-
-            return Ok(overdue);
-        }
-
-        [HttpPost]
-        public async Task<ActionResult<Patient>> AddPatient([FromBody] Patient newPatient, CancellationToken ct)
-        {
-            _dbContext.Patients.Add(newPatient);
-            await _dbContext.SaveChangesAsync();
-
-            var singlePatientQuery = new[] { newPatient }.AsQueryable();
-
-            var isOverdue = _engine.ApplyScreeningFilter(singlePatientQuery).Any();
-
-            if (isOverdue)
-            {
-                await _hubContext.Clients.All.SendAsync("PatientOverdueAlert", newPatient, ct);
-            }
-
-            return CreatedAtAction(nameof(GetOverduePatients), new { id = newPatient.Id }, newPatient);
-        }
+        return CreatedAtAction(nameof(GetOverduePatients), new { id = newPatient.Id }, newPatient);
     }
 }
