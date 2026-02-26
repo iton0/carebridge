@@ -1,25 +1,26 @@
-import { HttpEvent, HttpHandlerFn, HttpRequest } from '@angular/common/http';
+import { HttpHandlerFn, HttpEvent, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { AuthService } from '../services/auth';
 
-// TODO: make this HIPAA-compliant access events.
-// Log:
-// - who accessed data
-// - when
-// - what actions taken
 export function loggingInterceptor(
   req: HttpRequest<unknown>,
   next: HttpHandlerFn,
 ): Observable<HttpEvent<unknown>> {
-  // Inject the current `AuthService` and use it to get an authentication token:
-  const authToken = inject(AuthService).getAuthToken();
-  // Clone the request to add the authentication header.
-  const newReq = req.clone({
+  const auth = inject(AuthService);
+  const authToken = auth.getAuthToken();
+  const user = auth.currentUser();
+
+  const authorizedReq = req.clone({
     headers: req.headers.append('X-Authentication-Token', authToken),
   });
 
-  console.log(`[INTERCEPTOR] ${newReq.method} ${newReq.url}`);
+  const timestamp = new Date().toISOString();
 
-  return next(newReq);
+  // For now, structure the log so it's "Machine Readable."
+  console.log(
+    `[AUDIT] USER: ${user.id} | ACTION: ${req.method} | PATH: ${req.url} | TIME: ${timestamp}`,
+  );
+
+  return next(authorizedReq);
 }

@@ -1,22 +1,34 @@
 import { Injectable } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 import { Patient } from '../models/patient';
+import { PatientStore } from './patient';
 
 @Injectable({ providedIn: 'root' })
 export class SignalRService {
-  private readonly _signalRUrl = 'http://localhost:5138/patientHub';
-  private connection: signalR.HubConnection;
+  private readonly _url = 'http://localhost:5138/patientHub';
+  private _connection: signalR.HubConnection;
 
   constructor() {
-    this.connection = new signalR.HubConnectionBuilder()
-      .withUrl(this._signalRUrl)
+    this._connection = new signalR.HubConnectionBuilder()
+      .withUrl(this._url)
       .withAutomaticReconnect()
       .build();
   }
 
-  // A method to start and return the listener
-  onPatientUpdate(callback: (patients: Patient[]) => void) {
-    this.connection.on('PatientUpdated', callback);
-    this.connection.start().catch((err) => console.error(err));
+  async start(store: PatientStore) {
+    if (this._connection.state !== signalR.HubConnectionState.Disconnected) return;
+
+    this._connection.on('PatientUpdated', (data: Patient[]) => {
+      store.localUpdates.set(data);
+    });
+
+    await this._connection.start();
+  }
+
+  async stop() {
+    this._connection.off('PatientUpdated');
+    if (this._connection.state !== signalR.HubConnectionState.Disconnected) {
+      await this._connection.stop();
+    }
   }
 }

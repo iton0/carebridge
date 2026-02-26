@@ -1,68 +1,114 @@
-<div class="dashboard-container">
-  <h1>CareBridge Dashboard</h1>
+<mat-toolbar color="primary" class="app-toolbar">
+  <span>CareBridge Dashboard</span>
+  <span class="spacer"></span>
 
-  @if (patientService.loading()) {
-    <div class="loader">
-      <mat-spinner diameter="40"></mat-spinner>
-      <p>Loading clinical records...</p>
+  @if (auth.currentUser(); as user) {
+    <div class="user-profile">
+      <mat-icon class="user-icon">account_circle</mat-icon>
+      <span class="user-info">
+        {{ user.name }} <small>({{ user.role }})</small>
+      </span>
+      <button mat-icon-button (click)="auth.logout()" title="Logout">
+        <mat-icon>logout</mat-icon>
+      </button>
     </div>
-  } @else if (patientService.error()) {
+  }
+</mat-toolbar>
+
+<div class="dashboard-container">
+  @if (store.loading()) {
+    <div class="loader-container">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Retrieving patient records...</p>
+    </div>
+  } @else if (store.error()) {
     <mat-card class="error-card">
       <mat-card-content>
-        <mat-icon color="warn">error</mat-icon>
-        <span>Error: {{ patientService.error() }}. Please verify system connectivity.</span>
+        <div class="error-content">
+          <mat-icon color="warn">report_problem</mat-icon>
+          <div class="error-text">
+            <h3>Connection Issue</h3>
+            <p>{{ store.error() }}</p>
+          </div>
+          <button
+            mat-flat-button
+            color="warn"
+            (click)="store.load('http://localhost:5138/api/patient')"
+          >
+            Retry
+          </button>
+        </div>
       </mat-card-content>
     </mat-card>
   } @else {
-    <div class="stats-header">
-      <p>
-        Patients Overdue:
-        <span class="warn-text">{{ patientService.overdueCount() }}</span>
-      </p>
-    </div>
+    <div class="dashboard-content">
+      <div class="stats-header">
+        <h2>Overdue Screenings</h2>
+        <mat-chip-set>
+          <mat-chip class="overdue-chip">
+            {{ store.overdueCount() }} Patients Requiring Action
+          </mat-chip>
+        </mat-chip-set>
+      </div>
 
-    @if (patientService.overduePatients().length > 1) {
-      <mat-form-field appearance="outline" class="search-field">
-        <mat-label>Filter patients by name</mat-label>
-        <input matInput #searchInput [value]="searchQuery()" (input)="updateSearch($event)" />
-        <mat-icon matSuffix>search</mat-icon>
-      </mat-form-field>
-    }
+      @if (store.overduePatients().length > 1 || searchQuery()) {
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Search by patient name</mat-label>
+          <input
+            matInput
+            #searchInput
+            [value]="searchQuery()"
+            (input)="searchQuery.set($any($event.target).value)"
+            placeholder="e.g. Smith"
+          />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+      }
 
-    <mat-card appearance="outlined">
-      <mat-action-list>
-        @for (p of filteredPatients(); track p.id) {
-          <mat-list-item>
-            <span matListItemTitle>
-              <strong>{{ p.familyName }}</strong
-              >, {{ p.givenName }}
-            </span>
-            <div matListItemMeta>
-              <button
-                mat-stroked-button
-                color="primary"
-                (click)="patientService.markResolved(p.id)"
-              >
-                Resolve
-              </button>
+      <mat-card appearance="outlined" class="patient-list-card">
+        <mat-action-list>
+          @for (p of filteredPatients(); track p.id) {
+            <mat-list-item>
+              <mat-icon matListItemIcon color="accent">priority_high</mat-icon>
+              <span matListItemTitle>
+                <span class="name-label">PATIENT:</span>
+                <strong>{{ p.familyName }}</strong
+                >, {{ p.givenName }}
+              </span>
+              <span matListItemLine>
+                Last Screened: {{ p.lastScreeningDate | date: 'mediumDate' }}
+              </span>
+
+              <div matListItemMeta>
+                <button mat-stroked-button color="primary" (click)="store.resolve(p.id)">
+                  Mark Resolved
+                </button>
+              </div>
+            </mat-list-item>
+            @if (!$last) {
+              <mat-divider></mat-divider>
+            }
+          } @empty {
+            <div class="empty-state">
+              <mat-icon>check_circle_outline</mat-icon>
+              <p>
+                {{
+                  searchQuery()
+                    ? 'No matches found for "' + searchQuery() + '"'
+                    : 'All screenings are up to date.'
+                }}
+              </p>
             </div>
-          </mat-list-item>
-          @if (!$last) {
-            <mat-divider></mat-divider>
           }
-        } @empty {
-          <div class="empty-state">
-            {{ searchQuery() ? 'No patients match your search.' : 'No overdue patients found.' }}
-          </div>
-        }
-      </mat-action-list>
-    </mat-card>
+        </mat-action-list>
+      </mat-card>
 
-    <div class="actions">
-      <button mat-raised-button color="primary" (click)="addNewPatient()">
-        <mat-icon>add</mat-icon>
-        Add Test Patient
-      </button>
+      <div class="actions">
+        <button mat-fab extended color="primary" (click)="addNewPatient()">
+          <mat-icon>person_add</mat-icon>
+          Add Test Patient
+        </button>
+      </div>
     </div>
   }
 </div>

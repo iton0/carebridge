@@ -1,36 +1,87 @@
 :host {
-  display: block;
-  max-width: 600px;
-  margin: 40px auto;
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 
-h1 {
-  color: var(--mat-sys-primary);
-  border-bottom: 2px solid var(--mat-sys-outline-variant);
-  padding-bottom: 10px;
-  margin-bottom: 24px;
+.app-toolbar {
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.user-info small {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.dashboard-container {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 32px 20px;
+  box-sizing: border-box;
+}
+
+.stats-header h2 {
+  color: var(--mat-sys-on-surface);
+  font-weight: 400;
+  margin-bottom: 8px;
+}
+
+.overdue-chip {
+  background-color: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-weight: bold;
 }
 
 .search-field {
   width: 100%;
-  margin-bottom: 16px;
+  margin: 16px 0;
 }
 
-.actions-row {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid var(--mat-sys-outline-variant);
+.patient-list-card {
+  margin-bottom: 24px;
 }
 
-.warn-text {
-  color: var(--mat-sys-error);
-  font-weight: bold;
+.name-label {
+  font-size: 11px;
+  color: var(--mat-sys-secondary);
+  margin-right: 4px;
 }
 
-.loader-container {
+.loader-container,
+.empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px;
+  justify-content: center;
+  padding: 60px;
+  text-align: center;
+  color: var(--mat-sys-secondary);
+}
+
+.empty-state mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
 }
