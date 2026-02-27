@@ -1,5 +1,7 @@
 using CareBridge.Api.Data;
+using CareBridge.Api.Dtos;
 using CareBridge.Api.Logic;
+using CareBridge.Api.Mappings;
 using CareBridge.Api.Models;
 using CareBridge.Api.Settings;
 using CareBridge.Api.SignalR;
@@ -16,32 +18,39 @@ public class PatientController(
         CareBridgeDbContext dbContext,
         ScreeningSettings settings) : ControllerBase
 {
-    private readonly IHubContext<PatientHub> _hubContext = hubContext;
-    private readonly CareBridgeDbContext _dbContext = dbContext;
-    private readonly ScreeningSettings _settings = settings;
-
     [HttpGet("overdue")]
-    public async Task<List<Patient>> GetOverduePatients(CancellationToken ct)
+    public async Task<ActionResult<List<PatientDto>>> GetOverduePatients(CancellationToken ct)
     {
-        var threshold = ScreeningLogic.GetScreeningThreshold(_settings.CutoffDate);
+        var threshold = ScreeningLogic.GetScreeningThreshold(settings.CutoffDate);
 
-        return await _dbContext.Patients
+        var patients = await dbContext.Patients
             .AsNoTracking()
             .Where(p => p.LastScreeningDate < threshold)
             .ToListAsync(ct);
+
+        return patients.Select(p => p.ToDto()).ToList();
     }
 
     [HttpPost]
-    public async Task<IResult> AddPatient(Patient patient, CancellationToken ct)
+    public async Task<IResult> AddPatient(SavePatientDto dto, CancellationToken ct)
     {
-        _dbContext.Patients.Add(patient);
-        await _dbContext.SaveChangesAsync(ct);
+        // Map DTO back to Entity
+        var patient = new Patient
+        {
+            FamilyName = dto.FamilyName,
+            GivenName = dto.GivenName,
+            LastScreeningDate = dto.LastScreeningDate ?? DateOnly.MinValue,
+            Gender = dto.Gender
+        };
 
-        var threshold = ScreeningLogic.GetScreeningThreshold(_settings.CutoffDate);
+        dbContext.Patients.Add(patient);
+        await dbContext.SaveChangesAsync(ct);
+
+        var threshold = ScreeningLogic.GetScreeningThreshold(settings.CutoffDate);
 
         if (ScreeningLogic.IsOverdue(patient.LastScreeningDate, threshold))
         {
-            await _hubContext.Clients.All.SendAsync("PatientOverdueAlert", new
+            await hubContext.Clients.All.SendAsync("PatientOverdueAlert", new
             {
                 patient.Id,
                 FullName = $"{patient.FamilyName}, {patient.GivenName}",
@@ -49,6 +58,6 @@ public class PatientController(
             }, ct);
         }
 
-        return Results.Created($"/api/patient/{patient.Id}", patient);
+        return Results.Created($"/api/patient/{patient.Id}", patient.ToDto());
     }
 }
