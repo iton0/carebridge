@@ -2,5 +2,5 @@ namespace CareBridge.Api.Settings;
 
 public class ScreeningSettings
 {
-    public DateTime CutoffDate { get; set; }
+    public DateOnly CutoffDate { get; set; }
 }

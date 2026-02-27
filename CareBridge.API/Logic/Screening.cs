@@ -4,17 +4,17 @@ using CareBridge.Api.Models;
 
 public static class ScreeningLogic
 {
-    public static DateTime GetScreeningThreshold(DateTime cutoffDate)
+    public static DateOnly GetScreeningThreshold(DateOnly cutoffDate)
     {
         return cutoffDate.AddYears(-1);
     }
 
-    public static bool IsOverdue(DateTime lastScreening, DateTime threshold)
+    public static bool IsOverdue(DateOnly lastScreening, DateOnly threshold)
     {
         return lastScreening < threshold;
     }
 
-    public static IQueryable<Patient> ApplyFilter(IQueryable<Patient> query, DateTime cutoffDate)
+    public static IQueryable<Patient> ApplyFilter(IQueryable<Patient> query, DateOnly cutoffDate)
     {
         var threshold = GetScreeningThreshold(cutoffDate);
 
