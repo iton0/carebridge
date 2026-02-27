@@ -85,3 +85,9 @@
   justify-content: center;
   margin-top: 32px;
 }
+
+.text-muted {
+  color: rgba(0, 0, 0, 0.54);
+  font-style: italic;
+  font-size: 0.9em;
+}

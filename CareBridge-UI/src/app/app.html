@@ -76,7 +76,12 @@
                 >, {{ p.givenName }}
               </span>
               <span matListItemLine>
-                Last Screened: {{ p.lastScreeningDate | date: 'mediumDate' }}
+                @if (p.lastScreeningDate) {
+                  Last Screened:
+                  {{ p.lastScreeningDate | date: 'mediumDate' }}
+                } @else {
+                  <span class="text-muted">Never Screened</span>
+                }
               </span>
 
               <div matListItemMeta>
