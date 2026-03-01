@@ -1,7 +1,7 @@
 import { signal, computed, inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { mapGenderStringToEnum, Patient } from '../models/patient';
+import { Patient } from '../models/patient';
 
 export const mergeAndFilter = (
   remote: Patient[],
@@ -76,7 +76,7 @@ export class PatientStore {
         familyName: newPatient.familyName,
         givenName: newPatient.givenName,
         lastScreeningDate: newPatient.lastScreeningDate,
-        gender: mapGenderStringToEnum(newPatient.gender),
+        gender: newPatient.gender,
       };
 
       const saved = await firstValueFrom(this.http.post<Patient>(apiUrl, payload));

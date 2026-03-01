@@ -1,12 +1,5 @@
 export type DateOnly = string & { readonly __brand: 'dateonly' };
 
-export enum Gender {
-  Unknown = 0,
-  Male = 1,
-  Female = 2,
-  Other = 3,
-}
-
 export interface Patient {
   id: number;
   familyName: string;
@@ -32,9 +25,4 @@ export function asDateOnly(value: string | null | undefined): DateOnly | null {
     throw new Error(`Invalid DateOnly format: ${value}. Expected YYYY-MM-DD.`);
   }
   return value as DateOnly;
-}
-
-export function mapGenderStringToEnum(gender: string): Gender {
-  const entry = Object.entries(Gender).find(([key]) => key.toLowerCase() === gender.toLowerCase());
-  return entry ? (entry[1] as Gender) : Gender.Unknown;
 }

@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CareBridge.Api.Controllers;
 
+
 [ApiController]
 [Route("api/[controller]")]
 public class PatientController(
@@ -35,13 +36,7 @@ public class PatientController(
     public async Task<IResult> AddPatient(SavePatientDto dto, CancellationToken ct)
     {
         // Map DTO back to Entity
-        var patient = new Patient
-        {
-            FamilyName = dto.FamilyName,
-            GivenName = dto.GivenName,
-            LastScreeningDate = dto.LastScreeningDate ?? DateOnly.MinValue,
-            Gender = dto.Gender
-        };
+        var patient = dto.ToEntity();
 
         dbContext.Patients.Add(patient);
         await dbContext.SaveChangesAsync(ct);
