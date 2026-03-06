@@ -1,28 +1,53 @@
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { tap } from 'rxjs/operators';
+import { jwtDecode } from 'jwt-decode';
+import { Router } from '@angular/router';
 
-export interface User {
-  id: string;
-  name: string;
-  role: 'clinician' | 'admin';
-}
-
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
-  readonly currentUser = signal<User>({
-    id: 'USR-123',
-    name: 'Dr. Tonuzi',
-    role: 'clinician',
-  });
+  private apiUrl = 'http://localhost:5138/api/auth';
+  private router = inject(Router);
 
-  getAuthToken(): string {
-    // In a real app, might pull this from localStorage or a cookie.
-    return 'mpath-debug-token-2026';
+  currentUser = signal<{ name: string; role: string } | null>(this.decodeUser());
+
+  constructor(private http: HttpClient) {}
+
+  login(credentials: any) {
+    return this.http.post<{ token: string }>(`${this.apiUrl}/login`, credentials).pipe(
+      tap((response) => {
+        localStorage.setItem('carebridge_token', response.token);
+        this.currentUser.set(this.decodeUser());
+      }),
+    );
   }
 
   logout() {
-    console.log('--> User logged out, clearing state.');
-    // Logic to redirect or clear tokens would go here
+    localStorage.removeItem('carebridge_token');
+    this.currentUser.set(null);
+    this.router.navigate(['/login']);
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem('carebridge_token');
+  }
+
+  getUsername(): string | null {
+    const user = this.currentUser();
+    return user ? user.name : 'Anonymous';
+  }
+
+  private decodeUser() {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const decoded: any = jwtDecode(token);
+      return {
+        name: decoded.unique_name || decoded.name || 'User',
+        role: decoded.role || 'User',
+      };
+    } catch {
+      return null;
+    }
   }
 }
