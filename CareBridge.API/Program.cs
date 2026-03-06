@@ -2,6 +2,10 @@ using CareBridge.Api.Data;
 using CareBridge.Api.Settings;
 using CareBridge.Api.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using CareBridge.Api.Logic;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +19,31 @@ const string AngularPolicy = "AllowAngularOrigin";
 const string AngularUrl = "http://localhost:4200";
 const string DbName = "carebridge.db";
 
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var key = Encoding.UTF8.GetBytes(jwtSettings["Key"] ?? "YourFallbackSecretKeyHere");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(key)
+    };
+});
+
+
 // --- 2. SERVICES ---
+builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddSignalR();
@@ -26,6 +54,8 @@ builder.Services.AddSingleton(screeningSettings);
 // Register the DATABASE.
 builder.Services.AddDbContext<CareBridgeDbContext>(options =>
     options.UseSqlite($"Data Source={DbName}"));
+
+builder.Services.AddScoped<JwtService>();
 
 // --- 3. CORS CONFIGURATION ---
 builder.Services.AddCors(options =>
@@ -46,6 +76,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(AngularPolicy);
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
