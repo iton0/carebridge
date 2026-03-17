@@ -42,6 +42,13 @@ export class AuthService {
     if (!token) return null;
     try {
       const decoded: any = jwtDecode(token);
+
+      const currentTime = Date.now() / 1000;
+      if (decoded.exp < currentTime) {
+        this.logout();
+        return null;
+      }
+
       return {
         name: decoded.unique_name || decoded.name || 'User',
         role: decoded.role || 'User',
