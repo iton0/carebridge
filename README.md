@@ -7,7 +7,8 @@ A clinical decision support (CDS) mini-service that identifies patients overdue 
 
 ### Demo
 
-https://github.com/user-attachments/assets/9b2fcd24-3b21-49c9-9122-adaa392e5ca1
+
+https://github.com/user-attachments/assets/db14a956-0d87-4414-a560-b639452162af
 
 ### Tech Stack
 
