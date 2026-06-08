@@ -1,2 +1,3 @@
 *[a-z].md
 !.github/**
+.compound-engineering/*.local.yaml
